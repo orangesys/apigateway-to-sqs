@@ -32,3 +32,7 @@ variable "api_description" {
   type        = string
   default     = ""
 }
+
+variable "stage_name" {
+  type        = string
+}

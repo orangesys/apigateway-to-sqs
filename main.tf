@@ -46,12 +46,12 @@ resource "aws_iam_role_policy_attachment" "api_exec_role" {
   policy_arn = aws_iam_policy.api_policy.arn
 }
 
-data "template_file" "api_template_file" {
+data "template_file" "_" {
   template = var.api_template
 
   vars = {
-      api_arn = aws_iam_role.apiSQS.arn
-      sqs_arn = aws_sqs_queue.queue.arn
+    api_arn = aws_iam_role.apiSQS.arn
+    sqs_arn = aws_sqs_queue.queue.arn
   }
 
   # vars = var.api_template_vars
@@ -63,10 +63,23 @@ resource "aws_api_gateway_rest_api" "apiGateway" {
   binary_media_types = var.binary_media_types
   description        = var.api_description
 
-  body = data.template_file.api_template_file.rendered
+  body = data.template_file._.rendered
 
   endpoint_configuration {
     types = ["REGIONAL"]
+  }
+}
+
+resource "aws_api_gateway_deployment" "api" {
+  rest_api_id = aws_api_gateway_rest_api.apiGateway.id
+  stage_name  = var.stage_name
+
+  triggers = {
+    redeployment = sha1(data.template_file._.rendered)
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
